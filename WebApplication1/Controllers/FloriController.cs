@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+
 namespace FloriAPI.Controllers
 {
     [Route("api/flori")]
@@ -12,9 +14,14 @@ namespace FloriAPI.Controllers
     {
         // -- GET ALL STOCS --
         [HttpGet("allStocs")]
-        public List<StocDTO> GetAllStoc()
+        public ActionResult<List<StocDTO>> GetAllStoc()
         {
-            return StocDTO.From(Program._context.Stocuri.OrderBy(e => e.Id).Include(l => l.Lot).ToList());
+           var cc=  Program._context.Stocuri.ToList();
+            var lot = cc[0].Lot;
+            Console.WriteLine("++++++++++++++ " + lot);
+            //return Ok(StocDTO.From(Program._context.Stocuri.OrderBy(e => e.Id).Include(l => l.Lot).ToList()));
+            return Ok(StocDTO.From(Program._context.Stocuri.OrderBy(e => e.Id).ToList()));
+
         }
 
         // -- GET ALL LOTS --
@@ -136,14 +143,17 @@ namespace FloriAPI.Controllers
         }
 
         [HttpDelete("deleteStoc")]
-        public void DeleteStoc(StocDTO stocDTO)
+        public IActionResult DeleteStoc(StocDTO stocDTO)
         {
             Stoc stoc = Program._context.Stocuri.Find(stocDTO.Id);
-            if (stoc != null)
+
+            if (stoc == null)
             {
-                Program._context.Stocuri.Remove(stoc);
-                Program._context.SaveChanges();
+                return StatusCode(500, "Internal server error");
             }
+            Program._context.Stocuri.Remove(stoc);
+            Program._context.SaveChanges();
+            return Ok(); 
         }
 
           [HttpDelete("deleteStocAndLot")]
@@ -154,10 +164,11 @@ namespace FloriAPI.Controllers
 
              if (stoc == null) return;
 
-             if (stoc.LotId == stocDTO.Lot.Id)
+           /*  if (stoc.LotId == stocDTO.Lot.Id)
              {
                  Program._context.Loturi.Remove(stoc.Lot);
              }
+           */
 
              Program._context.Stocuri.Remove(stoc);
              Program._context.SaveChanges();
